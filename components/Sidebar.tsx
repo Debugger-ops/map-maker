@@ -51,11 +51,12 @@ interface Props {
   tileStyle: TileStyle;
   setTileStyle: (t: TileStyle) => void;
   groqKey: string;
+  grokKey: string;
   geminiKey: string;
   openAIKey: string;
   googleMapsKey: string;
-  onSaveKeys: (keys: { groqKey: string; geminiKey: string; openAIKey: string; googleMapsKey: string }) => void;
-  serverProvider: "groq" | "gemini" | "openai" | null;
+  onSaveKeys: (keys: { groqKey: string; grokKey: string; geminiKey: string; openAIKey: string; googleMapsKey: string }) => void;
+  serverProvider: "groq" | "grok" | "gemini" | "openai" | "pollinations" | null;
   currentDataset: Dataset | null;
 }
 
@@ -82,6 +83,7 @@ export default function Sidebar({
   tileStyle,
   setTileStyle,
   groqKey,
+  grokKey,
   geminiKey,
   openAIKey,
   googleMapsKey,
@@ -93,9 +95,13 @@ export default function Sidebar({
   const filteredPresets = presetDatasets.filter((d) => d.scope === scope);
   const filteredUser = userDatasets.filter((d) => d.scope === scope);
 
-  const activeProvider: "groq" | "gemini" | "openai" | null =
-    groqKey ? "groq" : geminiKey ? "gemini" : openAIKey ? "openai" : serverProvider;
-  const aiReady = Boolean(activeProvider);
+  const activeProvider: "groq" | "grok" | "gemini" | "openai" | "pollinations" =
+    groqKey   ? "groq"
+    : grokKey   ? "grok"
+    : geminiKey ? "gemini"
+    : openAIKey ? "openai"
+    : (serverProvider ?? "pollinations");
+  const aiReady = true; // always ready
 
   function toggleSection(name: string) {
     setOpenSection((s) => (s === name ? null : name));
@@ -127,6 +133,7 @@ export default function Sidebar({
         <AIAssistant
           scope={scope}
           groqKey={groqKey}
+          grokKey={grokKey}
           geminiKey={geminiKey}
           openAIKey={openAIKey}
           serverProvider={serverProvider}
@@ -136,7 +143,7 @@ export default function Sidebar({
 
       {/* ── Live Data Browser ─────────────────────── */}
       <CollapsibleSection
-        title="Live Data (World Bank)"
+        title={scope === "india" ? "Live Data (India States)" : "Live Data (World Bank)"}
         icon={
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/>
@@ -149,7 +156,7 @@ export default function Sidebar({
         badge="free"
         badgeColor="emerald"
       >
-        <LiveDataBrowser onDatasetLoaded={onUpload} />
+        <LiveDataBrowser scope={scope} onDatasetLoaded={onUpload} />
       </CollapsibleSection>
 
       {/* ── Map scope ──────────────────────────────── */}
@@ -437,6 +444,7 @@ export default function Sidebar({
       >
         <SettingsPanel
           groqKey={groqKey}
+          grokKey={grokKey}
           geminiKey={geminiKey}
           openAIKey={openAIKey}
           googleMapsKey={googleMapsKey}

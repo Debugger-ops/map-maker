@@ -159,17 +159,14 @@ export async function POST(req: NextRequest) {
 
   // Client headers take priority; server env vars are the fallback
   const groqKey   = req.headers.get("x-groq-key")   ?? process.env.GROQ_API_KEY   ?? "";
+  const grokKey   = req.headers.get("x-grok-key")   ?? process.env.GROK_API_KEY   ?? "";
   const geminiKey = req.headers.get("x-gemini-key") ?? process.env.GEMINI_API_KEY ?? "";
   const openAIKey = req.headers.get("x-openai-key") ?? process.env.OPENAI_API_KEY ?? "";
 
   if (!prompt) return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
-  if (!groqKey && !geminiKey && !openAIKey)
-    return NextResponse.json(
-      { error: "No AI key configured. Add a free Groq key at console.groq.com" },
-      { status: 401 }
-    );
+  // No key check needed — Pollinations (free, no key) is the automatic fallback
 
-  const cfg        = { groqKey, geminiKey, openAIKey };
+  const cfg        = { groqKey, grokKey, geminiKey, openAIKey };
   const isWorld    = scope !== "india";
   const locationList = isWorld ? WORLD_COUNTRIES.join(", ") : INDIA_STATES.join(", ");
   const scopeLabel   = isWorld ? "world countries" : "Indian states/UTs";
@@ -234,7 +231,7 @@ export async function POST(req: NextRequest) {
       unit,
       explanation,
       rows,
-      _provider:    groqKey ? "groq" : geminiKey ? "gemini" : "openai",
+      _provider:    groqKey ? "groq" : grokKey ? "grok" : geminiKey ? "gemini" : openAIKey ? "openai" : "pollinations",
       _dataSource:  dataSource,
       _indicatorId: wbIndicatorId,
       _year:        wbYear,

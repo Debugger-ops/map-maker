@@ -15,7 +15,8 @@ interface Props {
   groqKey: string;
   geminiKey: string;
   openAIKey: string;
-  serverProvider: "groq" | "gemini" | "openai" | null;
+  grokKey: string;
+  serverProvider: "groq" | "grok" | "gemini" | "openai" | "pollinations" | null;
   onClose: () => void;
 }
 
@@ -43,6 +44,7 @@ export default function RegionDetailPanel({
   totalRegions,
   scope,
   groqKey,
+  grokKey,
   geminiKey,
   openAIKey,
   serverProvider,
@@ -57,9 +59,14 @@ export default function RegionDetailPanel({
   const [aiError, setAIError] = useState<string | null>(null);
   const [tab, setTab] = useState<"overview" | "weather" | "wiki" | "ai">("overview");
 
-  const activeProvider: "groq" | "gemini" | "openai" | null =
-    groqKey ? "groq" : geminiKey ? "gemini" : openAIKey ? "openai" : serverProvider;
-  const aiReady = Boolean(activeProvider);
+  // Pollinations is always available — AI is always ready
+  const activeProvider: "groq" | "grok" | "gemini" | "openai" | "pollinations" =
+    groqKey   ? "groq"
+    : grokKey   ? "grok"
+    : geminiKey ? "gemini"
+    : openAIKey ? "openai"
+    : (serverProvider ?? "pollinations");
+  const aiReady = true;
 
   const fetchWeather = useCallback(async (name: string) => {
     setWeatherLoading(true);
@@ -86,15 +93,13 @@ export default function RegionDetailPanel({
   }, [scope]);
 
   const fetchAI = useCallback(async (name: string) => {
-    if (!aiReady) {
-      setAIError("Add your OpenAI API key in ⚙ Settings to enable AI insights.");
-      return;
-    }
+    // aiReady is always true (Pollinations fallback)
     setAILoading(true);
     setAIError(null);
     try {
       const headers: Record<string, string> = {};
       if      (groqKey)   headers["x-groq-key"]   = groqKey;
+      else if (grokKey)   headers["x-grok-key"]   = grokKey;
       else if (geminiKey) headers["x-gemini-key"] = geminiKey;
       else if (openAIKey) headers["x-openai-key"] = openAIKey;
 

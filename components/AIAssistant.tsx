@@ -6,16 +6,17 @@ import type { Dataset, MapScope } from "@/lib/types";
 interface Props {
   scope: MapScope;
   groqKey: string;
+  grokKey: string;
   geminiKey: string;
   openAIKey: string;
-  serverProvider: "groq" | "gemini" | "openai" | null;
+  serverProvider: "groq" | "grok" | "gemini" | "openai" | "pollinations" | null;
   onDatasetGenerated: (d: Dataset) => void;
 }
 
 interface HistoryItem {
   prompt: string;
   status: "ok" | "error";
-  provider?: "groq" | "gemini" | "openai";
+  provider?: "groq" | "grok" | "gemini" | "openai" | "pollinations";
   dataSource?: "worldbank" | "ai-estimated";
   message: string;
 }
@@ -41,12 +42,14 @@ const WORLD_EXAMPLES = [
 ];
 
 const PROVIDER_STYLE = {
-  groq:   { label: "Groq · Llama 3.3",        badge: "FREE", dot: "bg-violet-500", pill: "text-violet-700 bg-violet-50 border-violet-200 dark:text-violet-300 dark:bg-violet-950/30 dark:border-violet-800/40" },
-  gemini: { label: "Gemini 1.5 Flash",         badge: "FREE", dot: "bg-blue-500",   pill: "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/30 dark:border-blue-800/40" },
-  openai: { label: "GPT-4o mini",              badge: "",     dot: "bg-emerald-500",pill: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800/40" },
+  pollinations: { label: "Pollinations AI",    badge: "FREE · NO KEY", dot: "bg-fuchsia-500", pill: "text-fuchsia-700 bg-fuchsia-50 border-fuchsia-200 dark:text-fuchsia-300 dark:bg-fuchsia-950/30 dark:border-fuchsia-800/40" },
+  groq:         { label: "Groq · Llama 3.3",  badge: "FREE",          dot: "bg-violet-500",  pill: "text-violet-700 bg-violet-50 border-violet-200 dark:text-violet-300 dark:bg-violet-950/30 dark:border-violet-800/40" },
+  grok:         { label: "Grok · xAI",        badge: "",              dot: "bg-sky-500",     pill: "text-sky-700 bg-sky-50 border-sky-200 dark:text-sky-300 dark:bg-sky-950/30 dark:border-sky-800/40" },
+  gemini:       { label: "Gemini 1.5 Flash",  badge: "FREE",          dot: "bg-blue-500",    pill: "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/30 dark:border-blue-800/40" },
+  openai:       { label: "GPT-4o mini",       badge: "",              dot: "bg-emerald-500", pill: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800/40" },
 };
 
-export default function AIAssistant({ scope, groqKey, geminiKey, openAIKey, serverProvider, onDatasetGenerated }: Props) {
+export default function AIAssistant({ scope, groqKey, grokKey, geminiKey, openAIKey, serverProvider, onDatasetGenerated }: Props) {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState<string | null>(null);
@@ -55,17 +58,18 @@ export default function AIAssistant({ scope, groqKey, geminiKey, openAIKey, serv
   const inputRef = useRef<HTMLInputElement>(null);
 
   const examples = scope === "india" ? INDIA_EXAMPLES : WORLD_EXAMPLES;
-  const activeProvider: "groq" | "gemini" | "openai" | null =
-    groqKey ? "groq" : geminiKey ? "gemini" : openAIKey ? "openai" : serverProvider;
-  const aiReady = Boolean(activeProvider);
+  // Pollinations is always available (no key needed) — AI is always ready
+  const activeProvider: "groq" | "grok" | "gemini" | "openai" | "pollinations" =
+    groqKey   ? "groq"
+    : grokKey   ? "grok"
+    : geminiKey ? "gemini"
+    : openAIKey ? "openai"
+    : (serverProvider ?? "pollinations");
+  const aiReady = true;
 
   async function handleGenerate() {
     const q = prompt.trim();
     if (!q || loading) return;
-    if (!aiReady) {
-      setError("Add a free Groq key in ⚙ Settings to generate maps with AI.");
-      return;
-    }
 
     setLoading(true);
     setError(null);
@@ -74,6 +78,7 @@ export default function AIAssistant({ scope, groqKey, geminiKey, openAIKey, serv
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if      (groqKey)   headers["x-groq-key"]   = groqKey;
+      else if (grokKey)   headers["x-grok-key"]   = grokKey;
       else if (geminiKey) headers["x-gemini-key"] = geminiKey;
       else if (openAIKey) headers["x-openai-key"] = openAIKey;
 
@@ -122,30 +127,16 @@ export default function AIAssistant({ scope, groqKey, geminiKey, openAIKey, serv
 
   return (
     <div className="space-y-3">
-      {/* Provider badge or no-key warning */}
-      {activeProvider ? (
-        <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${PROVIDER_STYLE[activeProvider].pill}`}>
-          <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${PROVIDER_STYLE[activeProvider].dot}`} />
-          {PROVIDER_STYLE[activeProvider].label}
-          {PROVIDER_STYLE[activeProvider].badge && (
-            <span className="rounded-full bg-emerald-100 px-1 py-px text-[8px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-              {PROVIDER_STYLE[activeProvider].badge}
-            </span>
-          )}
-        </div>
-      ) : (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
-          <svg className="mt-0.5 h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12" strokeLinecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" strokeLinecap="round"/>
-          </svg>
-          <span>
-            Add a <strong>free Groq key</strong> in ⚙ Settings.{" "}
-            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="underline">
-              Get one free →
-            </a>
+      {/* Provider badge — always shown, always ready */}
+      <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${PROVIDER_STYLE[activeProvider].pill}`}>
+        <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${PROVIDER_STYLE[activeProvider].dot}`} />
+        {PROVIDER_STYLE[activeProvider].label}
+        {PROVIDER_STYLE[activeProvider].badge && (
+          <span className="rounded-full bg-emerald-100 px-1 py-px text-[8px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+            {PROVIDER_STYLE[activeProvider].badge}
           </span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Input row */}
       <div className="flex gap-2">
@@ -229,11 +220,13 @@ export default function AIAssistant({ scope, groqKey, geminiKey, openAIKey, serv
               )}
               {h.provider && (
                 <span className={`shrink-0 rounded px-1 py-px text-[9px] font-medium ${
-                  h.provider === "groq"   ? "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300" :
-                  h.provider === "gemini" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300" :
-                                            "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                  h.provider === "groq"         ? "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300" :
+                  h.provider === "grok"         ? "bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-300" :
+                  h.provider === "gemini"       ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300" :
+                  h.provider === "pollinations" ? "bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-300" :
+                                                  "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
                 }`}>
-                  {h.provider === "groq" ? "Groq" : h.provider === "gemini" ? "Gemini" : "GPT"}
+                  {h.provider === "groq" ? "Groq" : h.provider === "grok" ? "Grok" : h.provider === "gemini" ? "Gemini" : h.provider === "pollinations" ? "Pollinations" : "GPT"}
                 </span>
               )}
             </div>

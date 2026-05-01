@@ -4,18 +4,25 @@ export const runtime = "edge";
 
 export async function GET() {
   const hasGroq   = Boolean(process.env.GROQ_API_KEY);
+  const hasGrok   = Boolean(process.env.GROK_API_KEY);
   const hasGemini = Boolean(process.env.GEMINI_API_KEY);
   const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
 
-  // Which provider will be used server-side (priority: Groq → Gemini → OpenAI)
-  const provider: "groq" | "gemini" | "openai" | null =
-    hasGroq ? "groq" : hasGemini ? "gemini" : hasOpenAI ? "openai" : null;
+  // Priority: Groq → Grok → Gemini → OpenAI → Pollinations (always available, no key)
+  const provider: "groq" | "grok" | "gemini" | "openai" | "pollinations" =
+    hasGroq ? "groq"
+    : hasGrok ? "grok"
+    : hasGemini ? "gemini"
+    : hasOpenAI ? "openai"
+    : "pollinations";
 
   return NextResponse.json({
-    configured: Boolean(provider),
-    groq: hasGroq,
-    gemini: hasGemini,
-    openai: hasOpenAI,
+    configured:   true,          // always true — Pollinations needs no key
+    groq:         hasGroq,
+    grok:         hasGrok,
+    gemini:       hasGemini,
+    openai:       hasOpenAI,
+    pollinations: true,          // always available
     provider,
   });
 }

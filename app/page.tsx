@@ -48,12 +48,13 @@ export default function Home() {
 
   // API keys — stored in localStorage
   const [groqKey, setGroqKey]         = useState<string>("");
+  const [grokKey, setGrokKey]         = useState<string>("");
   const [geminiKey, setGeminiKey]     = useState<string>("");
   const [openAIKey, setOpenAIKey]     = useState<string>("");
   const [googleMapsKey, setGoogleMapsKey] = useState<string>("");
 
-  // Which AI provider the server has configured
-  const [serverProvider, setServerProvider] = useState<"groq" | "gemini" | "openai" | null>(null);
+  // Which AI provider the server has configured (pollinations = free built-in fallback)
+  const [serverProvider, setServerProvider] = useState<"groq" | "grok" | "gemini" | "openai" | "pollinations" | null>(null);
 
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -77,11 +78,13 @@ export default function Home() {
 
   // Load API keys from localStorage on mount
   useEffect(() => {
-    const grKey = window.localStorage.getItem("mm-groq-key")   ?? "";
-    const geKey = window.localStorage.getItem("mm-gemini-key") ?? "";
-    const aiKey = window.localStorage.getItem("mm-openai-key") ?? "";
-    const gmKey = window.localStorage.getItem("mm-google-maps-key") ?? "";
+    const grKey  = window.localStorage.getItem("mm-groq-key")        ?? "";
+    const grkKey = window.localStorage.getItem("mm-grok-key")        ?? "";
+    const geKey  = window.localStorage.getItem("mm-gemini-key")      ?? "";
+    const aiKey  = window.localStorage.getItem("mm-openai-key")      ?? "";
+    const gmKey  = window.localStorage.getItem("mm-google-maps-key") ?? "";
     setGroqKey(grKey);
+    setGrokKey(grkKey);
     setGeminiKey(geKey);
     setOpenAIKey(aiKey);
     setGoogleMapsKey(gmKey);
@@ -107,16 +110,18 @@ export default function Home() {
   }, []);
 
   const handleSaveKeys = useCallback(
-    ({ groqKey: grKey, geminiKey: geKey, openAIKey: aiKey, googleMapsKey: gmKey }: {
-      groqKey: string; geminiKey: string; openAIKey: string; googleMapsKey: string
+    ({ groqKey: grKey, grokKey: grkKey, geminiKey: geKey, openAIKey: aiKey, googleMapsKey: gmKey }: {
+      groqKey: string; grokKey: string; geminiKey: string; openAIKey: string; googleMapsKey: string
     }) => {
       setGroqKey(grKey);
+      setGrokKey(grkKey);
       setGeminiKey(geKey);
       setOpenAIKey(aiKey);
       setGoogleMapsKey(gmKey);
-      window.localStorage.setItem("mm-groq-key",   grKey);
-      window.localStorage.setItem("mm-gemini-key", geKey);
-      window.localStorage.setItem("mm-openai-key", aiKey);
+      window.localStorage.setItem("mm-groq-key",        grKey);
+      window.localStorage.setItem("mm-grok-key",        grkKey);
+      window.localStorage.setItem("mm-gemini-key",      geKey);
+      window.localStorage.setItem("mm-openai-key",      aiKey);
       window.localStorage.setItem("mm-google-maps-key", gmKey);
     },
     []
@@ -254,9 +259,13 @@ export default function Home() {
     tileStyle === "google-hybrid" ||
     tileStyle === "esri-satellite";
 
-  const activeProvider: "groq" | "gemini" | "openai" | null =
-    groqKey ? "groq" : geminiKey ? "gemini" : openAIKey ? "openai" : serverProvider;
-  const aiReady = Boolean(activeProvider);
+  const activeProvider: "groq" | "grok" | "gemini" | "openai" | "pollinations" =
+    groqKey   ? "groq"
+    : grokKey   ? "grok"
+    : geminiKey ? "gemini"
+    : openAIKey ? "openai"
+    : (serverProvider ?? "pollinations");
+  const aiReady = true; // always ready — Pollinations needs no key
 
   return (
     <div className="flex h-screen w-screen flex-col bg-zinc-50 dark:bg-zinc-950">
@@ -293,24 +302,21 @@ export default function Home() {
           <span className="hidden rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 sm:inline">
             {isSatelliteTile ? "🛰️ " : "🗺️ "}{tileStyle}
           </span>
-          {/* AI status badge */}
-          {aiReady ? (
-            <span className={`hidden items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium sm:inline-flex ${
-              activeProvider === "groq"
-                ? "bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
-                : activeProvider === "gemini"
-                ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-            }`}>
-              <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse opacity-70" />
-              {activeProvider === "groq" ? "⚡ Groq (free)" : activeProvider === "gemini" ? "✨ Gemini (free)" : "✨ GPT-4o mini"}
-            </span>
-          ) : (
-            <span className="hidden items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 sm:inline-flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              Add AI key
-            </span>
-          )}
+          {/* AI status badge — always shown */}
+          <span className={`hidden items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium sm:inline-flex ${
+            activeProvider === "groq"           ? "bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
+            : activeProvider === "grok"         ? "bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"
+            : activeProvider === "gemini"       ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+            : activeProvider === "pollinations" ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-300"
+            : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+          }`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse opacity-70" />
+            {activeProvider === "groq"          ? "⚡ Groq (free)"
+             : activeProvider === "grok"        ? "✨ Grok (xAI)"
+             : activeProvider === "gemini"      ? "✨ Gemini (free)"
+             : activeProvider === "pollinations"? "✨ AI (free · no key)"
+             : "✨ GPT-4o mini"}
+          </span>
           <ThemeToggle isDark={isDark} onToggle={() => setIsDark((d) => !d)} />
         </div>
       </header>
@@ -340,6 +346,7 @@ export default function Home() {
           tileStyle={tileStyle}
           setTileStyle={setTileStyle}
           groqKey={groqKey}
+          grokKey={grokKey}
           geminiKey={geminiKey}
           openAIKey={openAIKey}
           googleMapsKey={googleMapsKey}
@@ -389,6 +396,7 @@ export default function Home() {
                   totalRegions={dataset?.rows.filter((r) => r.value !== null).length}
                   scope={scope}
                   groqKey={groqKey}
+                  grokKey={grokKey}
                   geminiKey={geminiKey}
                   openAIKey={openAIKey}
                   serverProvider={serverProvider}
