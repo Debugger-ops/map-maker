@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+/* Tell Tailwind v4 to use the `dark` class to drive dark mode. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
 }
 
 @theme inline {
@@ -12,15 +20,40 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+}
+
+/* Leaflet tooltip styling that respects light/dark theme. */
+.leaflet-tooltip {
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  color: #18181b;
+  font-size: 12px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+.dark .leaflet-tooltip {
+  background: rgba(24, 24, 27, 0.95);
+  color: #fafafa;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  display: none;
+}
+.leaflet-container {
+  font-family: inherit;
+}
+
+/* Hide ugly default focus outline on map tiles inside our app. */
+.leaflet-container:focus {
+  outline: none;
 }

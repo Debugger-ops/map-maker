@@ -9,9 +9,20 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/geojson": "^7946.0.16",
+    "@types/leaflet": "^1.9.21",
+    "@types/papaparse": "^5.5.2",
+    "html-to-image": "^1.11.13",
+    "leaflet": "^1.9.4",
+    "leaflet.heat": "^0.2.0",
     "next": "16.2.4",
+    "openai": "^6.35.0",
+    "papaparse": "^5.5.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-leaflet": "^5.0.0",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -20,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "mapshaper": "^0.7.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
